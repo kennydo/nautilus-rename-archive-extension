@@ -38,7 +38,7 @@ def get_zip_directory_names(filename):
 class RenameDialog(GObject.GObject):
     def __init__(self, window, original_name, new_name):
         self.dialog = Gtk.MessageDialog(window, 0, Gtk.MessageType.QUESTION,
-                                   Gtk.ButtonsType.YES_NO, "Rename Archive")
+                                   Gtk.ButtonsType.YES_NO, "Rename Archive?")
         self.dialog.format_secondary_text(
             "Do you want to rename\n\"{0}\" to\n\"{1}\"".format(
                 original_name, new_name))
