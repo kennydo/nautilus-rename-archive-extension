@@ -1,9 +1,11 @@
 from gi.repository import Nautilus, GObject, Gtk
+
+import functools
+import os
+import os.path
 import urllib
 import urlparse
 import zipfile
-import os
-import os.path
 
 
 SUPPORTED_ZIP_MIME_TYPES = ['application/zip',
@@ -25,6 +27,31 @@ def get_new_file_path(archive_path, directory_name):
     return os.path.join(os.path.dirname(archive_path), base_name)
 
 
+def zip_directories_cache(size):
+    def outer(f):
+        previous_paths = list()
+        path_directories = dict()
+
+        @functools.wraps(f)
+        def wrapper(zip_path):
+            if zip_path in previous_paths:
+                return path_directories[zip_path]
+
+            directories = f(zip_path)
+
+            if len(previous_paths) >= size:
+                dead_path = previous_paths[0]
+                del previous_paths[0]
+                del path_directories[dead_path]
+
+            previous_paths.append(zip_path)
+            path_directories[zip_path] = directories
+            return directories
+        return wrapper
+    return outer
+
+
+@zip_directories_cache(32)
 def get_zip_directory_names(filename):
     names = list()
     try:
@@ -32,7 +59,9 @@ def get_zip_directory_names(filename):
             names = [fname for fname in zip_file.namelist() if fname.endswith('/')]
     except zipfile.BadZipfile as e:
         pass
-    return [os.path.basename(dir_name[:-1]) for dir_name in names]
+    directory_names = [os.path.basename(dir_name[:-1]) for dir_name in names]
+    print "Got", directory_names, "for", os.path.basename(filename)
+    return directory_names
 
 
 class RenameDialog(GObject.GObject):
