@@ -102,7 +102,6 @@ def get_zip_directory_names(filename):
     except zipfile.BadZipfile as e:
         pass
     directory_names = [os.path.basename(dir_name[:-1]) for dir_name in names]
-    print "Got", directory_names, "for", os.path.basename(filename)
     return directory_names
 
 
