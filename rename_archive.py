@@ -14,11 +14,39 @@ SUPPORTED_ZIP_MIME_TYPES = ['application/zip',
 
 
 def get_file_path(file_info):
+    """Returns the simple file path from a Nautilus.FileInfo.
+
+    Gets the "/path/to/file" part from "file:///path/to/file".
+
+    Args:
+        file_info: a Nautilus.FileInfo instance
+
+    Returns:
+        A string representing a Unix path
+    """
     uri = file_info.get_uri()
     return urllib.unquote(urlparse.urlparse(uri).path)
 
 
 def get_new_file_path(archive_path, directory_name):
+    """Gets the proposed new path for an archive if it's renamed
+
+    Creates the full path of an archive if it is renamed after a directory.
+    It keeps the path of directories leading up to the base name, as well as
+    the file extension.
+
+    Calling this function with "/path/to/file.zip" and "dir-name" would return:
+    "/path/to/dir-name.zip".
+
+    Args:
+        archive_path: A string representing the full path of the archive
+        directory_name: String value of the directory we want to rename this
+            archive after.
+
+    Returns:
+        A string of the proposed file path after the archive has been renamed
+        after the given directory name.
+    """
     if '.' in archive_path:
         extension = archive_path.rsplit('.', 1)[1]
         base_name = directory_name + '.' + extension
@@ -28,6 +56,7 @@ def get_new_file_path(archive_path, directory_name):
 
 
 def zip_directories_cache(size):
+    """Simple cache"""
     def outer(f):
         previous_paths = list()
         path_directories = dict()
@@ -53,10 +82,23 @@ def zip_directories_cache(size):
 
 @zip_directories_cache(32)
 def get_zip_directory_names(filename):
+    """Gets the list of directories inside a ZIP archive
+
+    Reads the directory names inside of a ZIP archive, and returns a list of
+    each directory name (without its parent directories).
+
+    Args:
+        filename: A string that can be a relative filename or file path (it
+            doesn't matter as long as this script can read it) of a ZIP file
+
+    Returns:
+        A list of directory name strings.
+    """
     names = list()
     try:
         with zipfile.ZipFile(filename, 'r') as zip_file:
-            names = [fname for fname in zip_file.namelist() if fname.endswith('/')]
+            names = [fname for fname in zip_file.namelist()
+                     if fname.endswith('/')]
     except zipfile.BadZipfile as e:
         pass
     directory_names = [os.path.basename(dir_name[:-1]) for dir_name in names]
@@ -65,9 +107,11 @@ def get_zip_directory_names(filename):
 
 
 class RenameDialog(GObject.GObject):
+    """Wrapped Gtk Message Dialog class"""
     def __init__(self, window, original_name, new_name):
         self.dialog = Gtk.MessageDialog(window, 0, Gtk.MessageType.QUESTION,
-                                   Gtk.ButtonsType.YES_NO, "Rename Archive?")
+                                        Gtk.ButtonsType.YES_NO,
+                                        "Rename Archive?")
         self.dialog.format_secondary_text(
             "Do you want to rename\n\"{0}\" to\n\"{1}\"".format(
                 original_name, new_name))
@@ -80,10 +124,28 @@ class RenameDialog(GObject.GObject):
 
 
 class RenameArchiveProvider(GObject.GObject, Nautilus.MenuProvider):
+    """Creates a submenu to rename archives after the name of a directory
+    within the archive.
+    """
     def __init__(self):
         pass
 
     def rename_directory_menuitem_cb(self, menu, cb_parameters):
+        """Callback for when the user clicks on a directory name
+        to rename an archive after.
+
+        This displays a dialog that the user responds to with a Yes or No.
+        If the user clicks Yes, then this attempts to rename the file.
+
+        Args:
+            menu: the Nautilus.Menu that was the source of the click
+            cb_parameters: a tuple of type (Nautilus.FileInfo,
+                                            Gtk.Window,
+                                            string)
+        Returns:
+            Nothing.
+
+        """
         fileinfo, window, directory_name = cb_parameters
         if fileinfo.is_gone() or not fileinfo.can_write():
             return
@@ -113,10 +175,11 @@ class RenameArchiveProvider(GObject.GObject, Nautilus.MenuProvider):
             return
 
         if selected_file.get_mime_type() in SUPPORTED_ZIP_MIME_TYPES:
-            top_menuitem = Nautilus.MenuItem(name='RenameArchiveProvider::Rename Archive',
-                                             label='Rename Archive',
-                                             tip='Rename archive based on its directory names',
-                                             icon='')
+            top_menuitem = Nautilus.MenuItem(
+                name='RenameArchiveProvider::Rename Archive',
+                label='Rename Archive',
+                tip='Rename archive based on its directory names',
+                icon='')
 
             names_menu = Nautilus.Menu()
             top_menuitem.set_submenu(names_menu)
@@ -126,19 +189,27 @@ class RenameArchiveProvider(GObject.GObject, Nautilus.MenuProvider):
 
             directory_names = get_zip_directory_names(file_path)
             if not directory_names:
-                no_directories_menuitem = Nautilus.MenuItem(name='RenameArchiveProvider::No Directories',
-                                                            label='No directory names found',
-                                                            tip='',
-                                                            icon='')
+                no_directories_menuitem = Nautilus.MenuItem(
+                    name='RenameArchiveProvider::No Directories',
+                    label='No directory names found',
+                    tip='',
+                    icon='')
                 names_menu.append_item(no_directories_menuitem)
             else:
                 for directory_name in directory_names:
-                    dir_menuitem = Nautilus.MenuItem(name='RenameArchiveProvider::Directory::' + directory_name,
-                                                     label='Rename to "' + directory_name.replace('_', '__') + '"',
-                                                     tip='Rename to "' + directory_name.replace('_', '__') + '"',
-                                                     icon='')
-                    dir_menuitem.connect('activate', self.rename_directory_menuitem_cb,
-                                         (selected_file, window, directory_name))
+                    name = 'RenameArchiveProvider::Directory::' + \
+                        directory_name
+                    label = 'Rename to "' + \
+                        directory_name.replace('_', '__') + '"'
+
+                    dir_menuitem = Nautilus.MenuItem(
+                        name=name,
+                        label=label,
+                        tip=label,
+                        icon='')
+                    dir_menuitem.connect(
+                        'activate', self.rename_directory_menuitem_cb,
+                        (selected_file, window, directory_name))
                     names_menu.append_item(dir_menuitem)
 
             return [top_menuitem]
