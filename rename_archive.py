@@ -105,8 +105,8 @@ class RenameArchiveProvider(GObject.GObject, Nautilus.MenuProvider):
             else:
                 for directory_name in directory_names:
                     dir_menuitem = Nautilus.MenuItem(name='RenameArchiveProvider::Directory::' + directory_name,
-                                                     label='Rename to "' + directory_name + '"',
-                                                     tip='Rename to "' + directory_name + '"',
+                                                     label='Rename to "' + directory_name.replace('_', '__') + '"',
+                                                     tip='Rename to "' + directory_name.replace('_', '__') + '"',
                                                      icon='')
                     dir_menuitem.connect('activate', self.rename_directory_menuitem_cb,
                                          (selected_file, window, directory_name))
