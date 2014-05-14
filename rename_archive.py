@@ -55,32 +55,32 @@ def get_new_file_path(archive_path, directory_name):
     return os.path.join(os.path.dirname(archive_path), base_name)
 
 
-def zip_directories_cache(size):
-    """Simple cache"""
+def lru_cache(size):
+    """Simple LRU cache"""
     def outer(f):
-        previous_paths = list()
-        path_directories = dict()
+        prev_inputs = list()
+        prev_outputs = dict()
 
         @functools.wraps(f)
-        def wrapper(zip_path):
-            if zip_path in previous_paths:
-                return path_directories[zip_path]
+        def wrapper(function_input):
+            if function_input in prev_inputs:
+                return prev_outputs[function_input]
 
-            directories = f(zip_path)
+            function_output = f(function_input)
 
-            if len(previous_paths) >= size:
-                dead_path = previous_paths[0]
-                del previous_paths[0]
-                del path_directories[dead_path]
+            if len(prev_inputs) >= size:
+                dead_path = prev_inputs[0]
+                del prev_inputs[0]
+                del prev_outputs[dead_path]
 
-            previous_paths.append(zip_path)
-            path_directories[zip_path] = directories
-            return directories
+            prev_inputs.append(function_input)
+            prev_outputs[function_input] = function_output
+            return function_output
         return wrapper
     return outer
 
 
-@zip_directories_cache(32)
+@lru_cache(32)
 def get_zip_directory_names(filename):
     """Gets the list of directories inside a ZIP archive
 
