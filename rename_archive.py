@@ -6,11 +6,24 @@ import os.path
 import urllib
 import urlparse
 import zipfile
+try:
+    import rarfile
+except ImportError:
+    rarfile = None
 
 
-SUPPORTED_ZIP_MIME_TYPES = ['application/zip',
-                            'application/x-zip',
-                            'application/zip-compressed']
+if rarfile:
+    # The default separator is '\\', which is different from what zipfile uses
+    rarfile.PATH_SEP = '/'
+
+
+# I put these in a tuple so that they don't accidentally get mutated.
+ZIP_MIME_TYPES = tuple(['application/zip',
+                       'application/x-zip',
+                       'application/zip-compressed'])
+RAR_MIME_TYPES = tuple(['application/rar',
+                        'application/x-rar',
+                        'application/x-rar-compressed'])
 
 
 def get_file_path(file_info):
@@ -100,8 +113,32 @@ def get_zip_directory_names(filename):
             names = [fname for fname in zip_file.namelist()
                      if fname.endswith('/')]
     except zipfile.BadZipfile as e:
-        pass
+        print(e)
     directory_names = [os.path.basename(dir_name[:-1]) for dir_name in names]
+    return directory_names
+
+
+@lru_cache(32)
+def get_rar_directory_names(filename):
+    """Gets the list of directories inside a RAR archive
+
+    Reads the directory names inside of a RAR archive, and returns a list of
+    each directory name (without its parent directories).
+
+    Args:
+        filename: A string that can be a relative filename or file path (it
+            doesn't matter as long as this script can read it) of a ZIP file
+
+    Returns:
+        A list of directory name strings.
+    """
+    names = list()
+    try:
+        with rarfile.RarFile(filename, 'r') as rar_file:
+            names = [info.filename for info in rar_file.infolist() if info.isdir()]
+    except rarfile.Error as e:
+        print(e)
+    directory_names = [os.path.basename(dir_name) for dir_name in names]
     return directory_names
 
 
@@ -127,7 +164,9 @@ class RenameArchiveProvider(GObject.GObject, Nautilus.MenuProvider):
     within the archive.
     """
     def __init__(self):
-        pass
+        self.supported_mime_types = list(ZIP_MIME_TYPES)
+        if rarfile:
+            self.supported_mime_types += list(RAR_MIME_TYPES)
 
     def rename_directory_menuitem_cb(self, menu, cb_parameters):
         """Callback for when the user clicks on a directory name
@@ -145,10 +184,10 @@ class RenameArchiveProvider(GObject.GObject, Nautilus.MenuProvider):
             Nothing.
 
         """
-        fileinfo, window, directory_name = cb_parameters
-        if fileinfo.is_gone() or not fileinfo.can_write():
+        file_info, window, directory_name = cb_parameters
+        if file_info.is_gone() or not file_info.can_write():
             return
-        old_path = get_file_path(fileinfo)
+        old_path = get_file_path(file_info)
         old_name = os.path.basename(old_path)
         new_path = get_new_file_path(old_path, directory_name)
         new_name = os.path.basename(new_path)
@@ -161,7 +200,7 @@ class RenameArchiveProvider(GObject.GObject, Nautilus.MenuProvider):
             try:
                 os.rename(old_path, new_path)
             except os.OSError as e:
-                print e
+                print(e)
 
     def get_file_items(self, window, files):
         if len(files) != 1:
@@ -173,7 +212,9 @@ class RenameArchiveProvider(GObject.GObject, Nautilus.MenuProvider):
             # Not sure which URIs zipfile supports reading from
             return
 
-        if selected_file.get_mime_type() in SUPPORTED_ZIP_MIME_TYPES:
+        mime_type = selected_file.get_mime_type()
+
+        if mime_type in self.supported_mime_types:
             top_menuitem = Nautilus.MenuItem(
                 name='RenameArchiveProvider::Rename Archive',
                 label='Rename Archive',
@@ -185,8 +226,13 @@ class RenameArchiveProvider(GObject.GObject, Nautilus.MenuProvider):
 
             # create the submenu items
             file_path = get_file_path(selected_file)
+            if mime_type in ZIP_MIME_TYPES:
+                directory_names = get_zip_directory_names(file_path)
+            elif mime_type in RAR_MIME_TYPES:
+                directory_names = get_rar_directory_names(file_path)
+            else:
+                directory_names = None
 
-            directory_names = get_zip_directory_names(file_path)
             if not directory_names:
                 no_directories_menuitem = Nautilus.MenuItem(
                     name='RenameArchiveProvider::No Directories',
@@ -200,6 +246,7 @@ class RenameArchiveProvider(GObject.GObject, Nautilus.MenuProvider):
                         directory_name
                     label = 'Rename to "' + \
                         directory_name.replace('_', '__') + '"'
+                    # we have to perform the underscore replacement in the label to get it to show up
 
                     dir_menuitem = Nautilus.MenuItem(
                         name=name,
