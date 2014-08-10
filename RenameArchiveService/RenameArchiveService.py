@@ -42,7 +42,7 @@ class RenameArchiveService(NSObject):
     @service_selector
     def openRenameArchiveDialog_userData_error_(self, pasteboard, data, error):
         # We only care about file URLs with UTI that we recognize
-        file_urls = get_file_urls_from_pasteboard(pasteboard, [UniformTypeIdentifier.zip])
+        file_urls = get_file_urls_from_pasteboard(pasteboard, [UniformTypeIdentifier.zip.value])
         if not file_urls:
             NSLog("None of the selected files had a supported Uniform Type Identifier:")
             unsupported_urls = get_file_urls_from_pasteboard(pasteboard)
@@ -62,13 +62,14 @@ class RenameArchiveService(NSObject):
         file_path = get_file_path(file_url)
 
         directory_names = []
-        if file_uti == UniformTypeIdentifier.zip:
+        if file_uti == UniformTypeIdentifier.zip.value:
             directory_names = get_zip_directory_names(file_path)
-        elif file_uti == UniformTypeIdentifier.rar:
+        elif file_uti == UniformTypeIdentifier.rar.value:
             NSLog("RAR isn't supported yet!")
 
+        NSLog("Dumping directory names in %@:", file_path)
         for d in directory_names:
-            NSLog("Directory name: %@", d)
+            NSLog("- %@", d)
         return
 
 
@@ -78,7 +79,7 @@ def get_file_urls_from_pasteboard(pasteboard, desired_uti_types=None):
     Specify the optional desired_uti_types is a list of UTI strings to only return
     :param NSPasteboard pasteboard: pasteboard
     :param desired_uti_types: a list of UTIs in string form
-    :type desired_uti_types: list of UniformTypeIdentifier
+    :type desired_uti_types: list of Uniform Type Identifier strings
     :return: a list of NSURL objects satisfying the desired_uti_types restriction (if any)
     :rtype: list of NSURL
     """
