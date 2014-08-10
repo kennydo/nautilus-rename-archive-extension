@@ -14,6 +14,10 @@ plist = dict(
             NSSendTypes=[
                 'NSURLPboardType',
             ],
+            NSSendFileTypes=[
+                'public.zip-archive',
+                'com.rarlab.rar-archive',
+            ],
         ),
     ],
 )
