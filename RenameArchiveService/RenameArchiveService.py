@@ -32,9 +32,19 @@ class RenameArchiveService(NSObject):
         # Finder gives us stuff like "file:///.file/id=...", so we turn it into the path URL
         file_url = file_urls[0].filePathURL()
 
-        NSLog("Selected: " + file_url.absoluteString())
+        NSLog("Selected: %@", file_url.absoluteString())
+        NSLog("UTI: %@", getUniformTypeUdentifierOfFileUrl(file_url))
+
         return
 
+
+def getUniformTypeUdentifierOfFileUrl(file_url):
+    """
+    Gets the resource's uniform type identifier
+    :param NSURL nsurl: URL to a file
+    :return: the resource's uniform type identifier as a str or None
+    """
+    return file_url.getResourceValue_forKey_error_(None, NSURLTypeIdentifierKey, None)[1]
 
 
 def main():
