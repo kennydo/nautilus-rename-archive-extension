@@ -1,4 +1,8 @@
 import objc
+import os
+import urllib
+import urlparse
+import zipfile
 
 # noinspection PyUnresolvedReferences
 from AppKit import *
@@ -42,10 +46,21 @@ class RenameArchiveService(NSObject):
         # We only deal with the first of the selected files.
         # Finder gives us stuff like "file:///.file/id=...", so we turn it into the path URL
         file_url = file_urls[0].filePathURL()
+        file_uti = get_uniform_type_identifier(file_url)
 
         NSLog("Selected: %@", file_url.absoluteString())
-        NSLog("UTI: %@", get_uniform_type_identifier(file_url))
+        NSLog("UTI: %@", file_uti)
 
+        # modules don't like dealing with the escaped path strings
+        file_path = get_file_path(file_url)
+
+        if file_uti == UniformTypeIdentifier.zip:
+            directory_names = get_zip_directory_names(file_path)
+        elif file_uti == UniformTypeIdentifier.rar:
+            NSLog("RAR isn't supported yet!")
+
+        for d in directory_names:
+            NSLog("Directory name: %@", d)
         return
 
 
@@ -76,6 +91,38 @@ def get_uniform_type_identifier(file_url):
     :return: the resource's uniform type identifier as a str or None
     """
     return file_url.getResourceValue_forKey_error_(None, NSURLTypeIdentifierKey, None)[1]
+
+
+def get_file_path(nsurl):
+    """
+    Gets the unescaped absolute path of a NSURL
+
+    :param NSURL nsurl: a file NSURL
+    :return: unescaped absolute path string
+    """
+    escaped_path = nsurl.path()
+    return urllib.unquote(urlparse.urlparse(escaped_path).path)
+
+
+def get_zip_directory_names(file_path):
+    """
+    Gets the list of directories inside a ZIP archive
+    Reads the directory names inside of a ZIP archive, and returns a list of
+    each directory name (without its parent directories).
+
+    :param str file_path: A string that can be a relative filename or file path (it
+        doesn't matter as long as this script can read it) of a ZIP file
+    :return: a list of directory name strings.
+    """
+    names = list()
+    try:
+        with zipfile.ZipFile(file_path, 'r') as zip_file:
+            names = [fname for fname in zip_file.namelist()
+                    if fname.endswith('/')]
+    except zipfile.BadZipfile as e:
+        print(e)
+    directory_names = [os.path.basename(dir_name[:-1]) for dir_name in names]
+    return directory_names
 
 
 def main():
