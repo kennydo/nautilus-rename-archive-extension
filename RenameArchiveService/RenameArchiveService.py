@@ -5,10 +5,17 @@ import urlparse
 import zipfile
 
 # noinspection PyUnresolvedReferences
-from AppKit import *
+from AppKit import (
+    NSRegisterServicesProvider,
+    NSPasteboardURLReadingFileURLsOnlyKey,
+    NSPasteboardURLReadingContentsConformToTypesKey,
+)
 from enum import Enum
 # noinspection PyUnresolvedReferences
-from Foundation import *
+from Foundation import (
+    NSObject, NSLog, NSURL, NSNumber, NSMutableDictionary,
+    NSURLTypeIdentifierKey,
+)
 from PyObjCTools import AppHelper
 
 
@@ -54,6 +61,7 @@ class RenameArchiveService(NSObject):
         # modules don't like dealing with the escaped path strings
         file_path = get_file_path(file_url)
 
+        directory_names = []
         if file_uti == UniformTypeIdentifier.zip:
             directory_names = get_zip_directory_names(file_path)
         elif file_uti == UniformTypeIdentifier.rar:
@@ -70,7 +78,7 @@ def get_file_urls_from_pasteboard(pasteboard, desired_uti_types=None):
     Specify the optional desired_uti_types is a list of UTI strings to only return
     :param NSPasteboard pasteboard: pasteboard
     :param desired_uti_types: a list of UTIs in string form
-    :type desired_uti_types: list of str
+    :type desired_uti_types: list of UniformTypeIdentifier
     :return: a list of NSURL objects satisfying the desired_uti_types restriction (if any)
     :rtype: list of NSURL
     """
@@ -118,7 +126,7 @@ def get_zip_directory_names(file_path):
     try:
         with zipfile.ZipFile(file_path, 'r') as zip_file:
             names = [fname for fname in zip_file.namelist()
-                    if fname.endswith('/')]
+                     if fname.endswith('/')]
     except zipfile.BadZipfile as e:
         print(e)
     directory_names = [os.path.basename(dir_name[:-1]) for dir_name in names]
