@@ -25,8 +25,7 @@ class UniformTypeIdentifier(Enum):
 
 
 def service_selector(fn):
-    """
-    Set the selector signature to be that of a service
+    """Set the selector signature to be that of a service
 
     Signature copied from:
     https://pythonhosted.org/pyobjc/examples/Cocoa/AppKit/SimpleService/index.html
@@ -74,9 +73,9 @@ class RenameArchiveService(NSObject):
 
 
 def get_file_urls_from_pasteboard(pasteboard, desired_uti_types=None):
-    """
-    Returns the file NSURL objects in the pasteboard.
+    """Return the file NSURL objects in the pasteboard.
     Specify the optional desired_uti_types is a list of UTI strings to only return
+
     :param NSPasteboard pasteboard: pasteboard
     :param desired_uti_types: a list of UTIs in string form
     :type desired_uti_types: list of Uniform Type Identifier strings
@@ -94,8 +93,8 @@ def get_file_urls_from_pasteboard(pasteboard, desired_uti_types=None):
 
 
 def get_uniform_type_identifier(file_url):
-    """
-    Gets the resource's uniform type identifier
+    """Get the resource's uniform type identifier
+
     :param NSURL file_url: URL to a file
     :return: the resource's uniform type identifier as a str or None
     """
@@ -103,8 +102,7 @@ def get_uniform_type_identifier(file_url):
 
 
 def get_file_path(nsurl):
-    """
-    Gets the unescaped absolute path of a NSURL
+    """Get the unescaped absolute path of a NSURL
 
     :param NSURL nsurl: a file NSURL
     :return: unescaped absolute path string
@@ -114,9 +112,8 @@ def get_file_path(nsurl):
 
 
 def get_zip_directory_names(file_path):
-    """
-    Gets the list of directories inside a ZIP archive
-    Reads the directory names inside of a ZIP archive, and returns a list of
+    """Get the list of directories inside a ZIP archive.
+    First reads the directory names inside of a ZIP archive, and then returns a list of
     each directory name (without its parent directories).
 
     :param str file_path: A string that can be a relative filename or file path (it
