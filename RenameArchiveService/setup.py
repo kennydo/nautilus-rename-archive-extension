@@ -23,7 +23,7 @@ plist = dict(
 )
 
 setup(
-    name='renamearchive',
+    name='RenameArchive',
     version='0.0.1',
     description='Simple service to rename archives based on the directories within',
 
