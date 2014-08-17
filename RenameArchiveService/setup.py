@@ -30,7 +30,10 @@ setup(
     # py2app arguments
     app=['RenameArchiveService.py'],
     options=dict(py2app=dict(plist=plist)),
-    data_files=['MainMenu.xib'],
+    data_files=[
+        'MainMenu.xib',
+        'RenameArchiveDialog.scpt',
+    ],
 
     url='https://github.com/kennydo/rename-archive-extension',
     license='3-clause BSD',
