@@ -125,8 +125,8 @@ class RenameArchiveService(NSObject):
 def display_alert(title, message):
     """Display a warning alert with the given ``title`` and ``message``.
 
-    :param title: the big bold title
-    :param message: the body of the alert
+    :param str title: the big bold title
+    :param str message: the body of the alert
     """
     alert = NSAlert.alloc().init()
     alert.setAlertStyle_(NSWarningAlertStyle)
