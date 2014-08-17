@@ -238,12 +238,9 @@ def prompt_user_rename_archive_dialog(archive_name, directory_names):
         'DIRECTORYNAMES': '\n'.join(directory_names),
     })
     if not result or not result.startswith("true:"):
-        display_alert(
-            "Prompt Failed",
-            "Prompting the user for directory name failed")
         return None
 
-    selected_name = result[5:].strip()
+    _, selected_name = result.strip().split(':', 1)
     if selected_name not in directory_names:
         display_alert(
             "Invalid Name",
