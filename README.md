@@ -17,6 +17,7 @@ Nautilus
 
 OSX Finder
 ----------
+1. Follow the instructions on ``https://bitbucket.org/ronaldoussoren/pyobjc`` to install ``pyobjc``.
 1. Enter the ``RenameArchiveService`` directory
 1. Run ``pip install -r requirements.txt`` to install the required dependencies
 1. Run ``python setup.py py2app`` to create ``RenameArchive.app`` in the ``dist`` folder.

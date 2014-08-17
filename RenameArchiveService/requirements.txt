@@ -1,4 +1,4 @@
 enum34==1.0
 py2app==0.9
-hg+https://bitbucket.org/ronaldoussoren/pyobjc/@469e3b956b452e3377f662ad41b3ed060d9216ea#egg=pyobjc
+pyobjc==3.1
 setuptools
