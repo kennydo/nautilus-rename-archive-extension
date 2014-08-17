@@ -11,9 +11,6 @@ plist = dict(
             NSMessage='openRenameArchiveDialog',
             NSPortName='RenameArchiveService',
             NSMenuItem=dict(default='Rename Archive'),
-            NSSendTypes=[
-                'NSURLPboardType',
-            ],
             NSSendFileTypes=[
                 'public.zip-archive',
                 'com.rarlab.rar-archive',
